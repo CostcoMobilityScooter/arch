@@ -1,624 +1,565 @@
-
+cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCH — Advanced Responsive Command Hub</title>
-<meta name="description" content="A powerful terminal-style app launcher and system utility for Windows. Free, open, and fast.">
+<title>ARCH v5.0 — Advanced Responsive Command Hub</title>
+<meta name="description" content="A fullscreen terminal-style app launcher, system monitor, and AI assistant for Windows. Free and open source.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:      #080a08;
-    --bg2:     #0d100d;
-    --fg:      #00ff88;
-    --fg-dim:  #005533;
-    --fg-mid:  #00cc66;
-    --amber:   #ffb000;
-    --blue:    #00aaff;
-    --err:     #ff4455;
-    --bar:     #111411;
-    --mono:    'Share Tech Mono', monospace;
-    --sans:    'Syne', sans-serif;
-  }
+:root {
+  --bg:       #05080a;
+  --bg1:      #080d10;
+  --bg2:      #0c1318;
+  --bg3:      #101a20;
+  --fg:       #e2f0f7;
+  --fg-dim:   #3a5a6e;
+  --fg-mid:   #7aafc4;
+  --green:    #00e5a0;
+  --green-d:  #003d2a;
+  --amber:    #f5a623;
+  --blue:     #29b6f6;
+  --red:      #ff4757;
+  --mono:     'JetBrains Mono', monospace;
+  --display:  'Bebas Neue', sans-serif;
+  --body:     'DM Sans', sans-serif;
+  --bar-h:    52px;
+  --radius:   2px;
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
 
-  html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  overflow-x: hidden;
+  cursor: default;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--fg);
-    font-family: var(--mono);
-    min-height: 100vh;
-    overflow-x: hidden;
-    cursor: default;
-  }
+/* ── SCANLINES ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  pointer-events: none; z-index: 9000;
+}
 
-  /* scanline overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-  }
+/* ── CUSTOM CURSOR ── */
+body { cursor: none; }
+#cursor {
+  position: fixed; width: 6px; height: 6px;
+  background: var(--green); border-radius: 50%;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform 0.1s, width 0.2s, height 0.2s;
+  box-shadow: 0 0 10px var(--green);
+}
+#cursor-ring {
+  position: fixed; width: 28px; height: 28px;
+  border: 1px solid rgba(0,229,160,0.4); border-radius: 50%;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: transform 0.15s ease, width 0.3s, height 0.3s, opacity 0.3s;
+}
+body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 12px; height: 12px; }
 
-  /* noise grain */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: -50%;
-    width: 200%;
-    height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    opacity: 0.035;
-    pointer-events: none;
-    z-index: 9998;
-    animation: grain 0.5s steps(1) infinite;
-  }
-  @keyframes grain {
-    0%,100%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}20%{transform:translate(3%,2%)}
-    30%{transform:translate(-1%,3%)}40%{transform:translate(2%,-1%)}50%{transform:translate(-3%,1%)}
-    60%{transform:translate(1%,-2%)}70%{transform:translate(-2%,3%)}80%{transform:translate(3%,-3%)}90%{transform:translate(-1%,2%)}
-  }
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--bar-h);
+  background: rgba(5,8,10,0.88);
+  border-bottom: 1px solid rgba(0,229,160,0.1);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px; z-index: 100;
+}
+.nav-logo {
+  font-family: var(--display);
+  font-size: 1.6rem; letter-spacing: 0.15em;
+  color: var(--green); text-decoration: none;
+}
+.nav-logo span { color: var(--fg-dim); font-size: 0.9rem; letter-spacing: 0.1em; margin-left: 8px; }
+.nav-links { display: flex; gap: 32px; }
+.nav-links a {
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--fg-dim); text-decoration: none;
+  letter-spacing: 0.1em; transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--green); }
+.nav-dl {
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--bg); background: var(--green);
+  padding: 8px 20px; text-decoration: none;
+  letter-spacing: 0.1em; transition: background 0.2s;
+}
+.nav-dl:hover { background: #00c488; }
 
-  /* ── NAV ── */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 48px;
-    background: rgba(8,10,8,0.92);
-    border-bottom: 1px solid var(--fg-dim);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
-    z-index: 100;
-    backdrop-filter: blur(8px);
-  }
-  .nav-logo {
-    font-family: var(--sans);
-    font-weight: 800;
-    font-size: 1.1rem;
-    letter-spacing: 0.2em;
-    color: var(--fg);
-    text-decoration: none;
-  }
-  .nav-logo span { color: var(--fg-dim); }
-  nav a {
-    color: var(--fg-dim);
-    text-decoration: none;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    transition: color 0.2s;
-    margin-left: 28px;
-  }
-  nav a:hover { color: var(--fg); }
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: grid; place-items: center;
+  padding: 100px 48px 80px;
+  position: relative; overflow: hidden;
+}
 
-  /* ── HERO ── */
-  .hero {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 40px 60px;
-    position: relative;
-    text-align: center;
-  }
+/* Grid background */
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
 
-  .hero-glow {
-    position: absolute;
-    width: 600px; height: 600px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,255,136,0.07) 0%, transparent 70%);
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
+/* Glow orbs */
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(0,229,160,0.04) 0%, transparent 65%);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  pointer-events: none;
+}
 
-  .ascii-logo {
-    font-size: clamp(0.45rem, 1.2vw, 0.75rem);
-    line-height: 1.2;
-    color: var(--fg);
-    text-shadow: 0 0 20px rgba(0,255,136,0.4);
-    margin-bottom: 32px;
-    opacity: 0;
-    animation: fadeUp 0.8s ease forwards 0.2s;
-    white-space: pre;
-  }
+.hero-inner {
+  position: relative; z-index: 1;
+  max-width: 900px; width: 100%; text-align: center;
+}
 
-  .hero-version {
-    font-size: 0.7rem;
-    color: var(--fg-dim);
-    letter-spacing: 0.3em;
-    margin-bottom: 20px;
-    opacity: 0;
-    animation: fadeUp 0.6s ease forwards 0.6s;
-  }
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--green); letter-spacing: 0.4em;
+  margin-bottom: 24px; opacity: 0;
+  animation: rise 0.6s ease forwards 0.2s;
+}
 
-  .hero-title {
-    font-family: var(--sans);
-    font-size: clamp(1rem, 3vw, 1.3rem);
-    font-weight: 400;
-    color: var(--fg-mid);
-    letter-spacing: 0.15em;
-    margin-bottom: 16px;
-    opacity: 0;
-    animation: fadeUp 0.6s ease forwards 0.8s;
-  }
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(5rem, 14vw, 11rem);
+  line-height: 0.9; letter-spacing: 0.05em;
+  color: var(--fg); margin-bottom: 4px;
+  opacity: 0; animation: rise 0.7s ease forwards 0.4s;
+}
+.hero-title .accent { color: var(--green); }
 
-  .hero-sub {
-    font-size: 0.85rem;
-    color: var(--fg-dim);
-    max-width: 480px;
-    line-height: 1.8;
-    margin-bottom: 48px;
-    opacity: 0;
-    animation: fadeUp 0.6s ease forwards 1s;
-  }
+.hero-sub-title {
+  font-family: var(--mono); font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+  color: var(--fg-mid); letter-spacing: 0.3em;
+  margin-bottom: 32px; opacity: 0;
+  animation: rise 0.6s ease forwards 0.6s;
+}
 
-  .hero-btns {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
-    opacity: 0;
-    animation: fadeUp 0.6s ease forwards 1.2s;
-  }
+.hero-desc {
+  font-size: 1.05rem; color: var(--fg-dim);
+  max-width: 520px; margin: 0 auto 52px;
+  line-height: 1.8; opacity: 0;
+  animation: rise 0.6s ease forwards 0.8s;
+}
+.hero-desc strong { color: var(--fg-mid); font-weight: 400; }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 28px;
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    letter-spacing: 0.1em;
-    text-decoration: none;
-    border: 1px solid;
-    transition: all 0.2s;
-    cursor: pointer;
-    background: transparent;
-  }
-  .btn-primary {
-    border-color: var(--fg);
-    color: var(--bg);
-    background: var(--fg);
-  }
-  .btn-primary:hover {
-    background: var(--fg-mid);
-    border-color: var(--fg-mid);
-    box-shadow: 0 0 24px rgba(0,255,136,0.3);
-  }
-  .btn-secondary {
-    border-color: var(--fg-dim);
-    color: var(--fg-dim);
-  }
-  .btn-secondary:hover {
-    border-color: var(--fg);
-    color: var(--fg);
-  }
+.hero-btns {
+  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  opacity: 0; animation: rise 0.6s ease forwards 1s;
+}
+.btn {
+  font-family: var(--mono); font-size: 0.78rem;
+  letter-spacing: 0.12em; text-decoration: none;
+  padding: 14px 32px; border: 1px solid; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary { background: var(--green); border-color: var(--green); color: var(--bg); }
+.btn-primary:hover { background: #00c488; border-color: #00c488; box-shadow: 0 0 30px rgba(0,229,160,0.3); }
+.btn-ghost { background: transparent; border-color: var(--fg-dim); color: var(--fg-dim); }
+.btn-ghost:hover { border-color: var(--fg); color: var(--fg); }
 
-  /* terminal preview */
-  .terminal-wrap {
-    margin-top: 72px;
-    width: 100%;
-    max-width: 720px;
-    opacity: 0;
-    animation: fadeUp 0.8s ease forwards 1.4s;
-  }
-  .terminal {
-    background: var(--bg2);
-    border: 1px solid var(--fg-dim);
-    box-shadow: 0 0 60px rgba(0,255,136,0.08), inset 0 0 40px rgba(0,0,0,0.4);
-  }
-  .terminal-bar {
-    background: var(--bar);
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--fg-dim);
-  }
-  .t-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-  }
-  .t-dot:nth-child(1) { background: #ff5f57; }
-  .t-dot:nth-child(2) { background: #febc2e; }
-  .t-dot:nth-child(3) { background: #28c840; }
-  .t-title {
-    margin-left: auto;
-    font-size: 0.7rem;
-    color: var(--fg-dim);
-    letter-spacing: 0.2em;
-  }
-  .terminal-body {
-    padding: 20px 24px;
-    font-size: 0.8rem;
-    line-height: 2;
-    min-height: 220px;
-  }
-  .t-dim   { color: var(--fg-dim); }
-  .t-cmd   { color: var(--fg); }
-  .t-info  { color: var(--blue); }
-  .t-amber { color: var(--amber); }
-  .t-good  { color: #00ff88; }
-  .t-err   { color: var(--err); }
-  .t-prompt { color: var(--fg-mid); }
-  .t-cursor {
-    display: inline-block;
-    width: 9px; height: 1.1em;
-    background: var(--fg);
-    vertical-align: text-bottom;
-    animation: blink 1s step-end infinite;
-  }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+/* terminal window */
+.terminal-wrap {
+  margin-top: 80px; max-width: 780px; width: 100%;
+  margin-left: auto; margin-right: auto;
+  opacity: 0; animation: rise 0.8s ease forwards 1.2s;
+}
+.terminal {
+  background: var(--bg1);
+  border: 1px solid rgba(0,229,160,0.15);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,229,160,0.05);
+}
+.t-titlebar {
+  background: var(--bg2); padding: 12px 16px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid rgba(0,229,160,0.08);
+}
+.t-dot { width: 10px; height: 10px; border-radius: 50%; }
+.t-dot:nth-child(1){background:#ff5f57;} .t-dot:nth-child(2){background:#febc2e;} .t-dot:nth-child(3){background:#28c840;}
+.t-bar-title { margin-left: auto; font-family: var(--mono); font-size: 0.68rem; color: var(--fg-dim); letter-spacing: 0.2em; }
+.t-body { padding: 20px 24px; font-family: var(--mono); font-size: 0.78rem; line-height: 2; min-height: 240px; text-align: left; }
+.t-dim    { color: var(--fg-dim); }
+.t-green  { color: var(--green); }
+.t-blue   { color: var(--blue); }
+.t-amber  { color: var(--amber); }
+.t-prompt { color: var(--fg-mid); }
+.t-cursor { display: inline-block; width: 8px; height: 1em; background: var(--green); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-  /* ── FEATURES ── */
-  .section {
-    padding: 100px 40px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-  .section-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.4em;
-    color: var(--fg-dim);
-    margin-bottom: 12px;
-  }
-  .section-title {
-    font-family: var(--sans);
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
-    font-weight: 800;
-    color: var(--fg);
-    line-height: 1.1;
-    margin-bottom: 60px;
-  }
-  .section-title span { color: var(--fg-dim); }
+/* ── STATS BAR ── */
+.stats-bar {
+  background: var(--bg2);
+  border-top: 1px solid rgba(0,229,160,0.08);
+  border-bottom: 1px solid rgba(0,229,160,0.08);
+  padding: 24px 48px;
+  display: flex; justify-content: center; gap: 80px; flex-wrap: wrap;
+}
+.stat { text-align: center; }
+.stat-num { font-family: var(--display); font-size: 3rem; color: var(--green); line-height: 1; }
+.stat-label { font-family: var(--mono); font-size: 0.65rem; color: var(--fg-dim); letter-spacing: 0.2em; margin-top: 4px; }
 
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1px;
-    background: var(--fg-dim);
-    border: 1px solid var(--fg-dim);
-  }
-  .feature {
-    background: var(--bg);
-    padding: 32px 28px;
-    transition: background 0.2s;
-  }
-  .feature:hover { background: var(--bg2); }
-  .feature-icon {
-    font-size: 1.4rem;
-    margin-bottom: 16px;
-  }
-  .feature-name {
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--fg);
-    margin-bottom: 8px;
-    letter-spacing: 0.05em;
-  }
-  .feature-desc {
-    font-size: 0.78rem;
-    color: var(--fg-dim);
-    line-height: 1.8;
-  }
+/* ── SECTIONS ── */
+.section { padding: 120px 48px; max-width: 1200px; margin: 0 auto; }
+.section-eyebrow { font-family: var(--mono); font-size: 0.68rem; color: var(--green); letter-spacing: 0.4em; margin-bottom: 16px; }
+.section-title {
+  font-family: var(--display); font-size: clamp(3rem, 6vw, 5.5rem);
+  line-height: 0.95; color: var(--fg); margin-bottom: 64px;
+}
+.section-title span { color: var(--fg-dim); }
 
-  /* ── COMMANDS SHOWCASE ── */
-  .commands-section {
-    padding: 80px 40px;
-    background: var(--bg2);
-    border-top: 1px solid var(--fg-dim);
-    border-bottom: 1px solid var(--fg-dim);
-  }
-  .commands-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-  .cmd-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 2px;
-    margin-top: 48px;
-  }
-  .cmd-item {
-    padding: 14px 16px;
-    background: var(--bg);
-    border-left: 2px solid transparent;
-    transition: border-color 0.2s;
-  }
-  .cmd-item:hover { border-color: var(--fg); }
-  .cmd-name {
-    color: var(--fg);
-    font-size: 0.82rem;
-    margin-bottom: 4px;
-  }
-  .cmd-desc {
-    color: var(--fg-dim);
-    font-size: 0.72rem;
-    line-height: 1.5;
-  }
+/* ── FEATURES ── */
+.features-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1px; background: rgba(0,229,160,0.08);
+  border: 1px solid rgba(0,229,160,0.08);
+}
+.feature {
+  background: var(--bg); padding: 36px 32px;
+  transition: background 0.25s;
+  position: relative; overflow: hidden;
+}
+.feature::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.feature:hover { background: var(--bg1); }
+.feature:hover::before { opacity: 1; }
+.feat-icon { font-size: 1.5rem; margin-bottom: 20px; }
+.feat-name { font-family: var(--display); font-size: 1.6rem; letter-spacing: 0.05em; color: var(--fg); margin-bottom: 10px; }
+.feat-desc { font-size: 0.88rem; color: var(--fg-dim); line-height: 1.8; }
 
-  /* ── DOWNLOAD ── */
-  .download-section {
-    padding: 120px 40px;
-    text-align: center;
-  }
-  .download-inner { max-width: 600px; margin: 0 auto; }
-  .download-box {
-    border: 1px solid var(--fg-dim);
-    padding: 48px;
-    margin-top: 48px;
-    position: relative;
-  }
-  .download-box::before {
-    content: '◈ DOWNLOAD';
-    position: absolute;
-    top: -10px; left: 24px;
-    background: var(--bg);
-    padding: 0 8px;
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: var(--fg-dim);
-  }
-  .download-filename {
-    font-size: 1.1rem;
-    color: var(--fg);
-    margin-bottom: 8px;
-  }
-  .download-meta {
-    font-size: 0.75rem;
-    color: var(--fg-dim);
-    margin-bottom: 32px;
-    line-height: 1.8;
-  }
-  .download-steps {
-    text-align: left;
-    margin-top: 40px;
-    border-top: 1px solid var(--fg-dim);
-    padding-top: 32px;
-  }
-  .download-steps h4 {
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: var(--fg-dim);
-    margin-bottom: 16px;
-  }
-  .step {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 12px;
-    font-size: 0.8rem;
-    line-height: 1.6;
-  }
-  .step-num {
-    color: var(--fg-dim);
-    min-width: 20px;
-  }
-  .step-text { color: var(--fg-mid); }
-  .step-text code {
-    color: var(--amber);
-    background: rgba(255,176,0,0.08);
-    padding: 1px 6px;
-  }
+/* ── BG SHOWCASE ── */
+.bg-section {
+  padding: 120px 48px;
+  background: var(--bg1);
+  border-top: 1px solid rgba(0,229,160,0.08);
+  border-bottom: 1px solid rgba(0,229,160,0.08);
+}
+.bg-inner { max-width: 1200px; margin: 0 auto; }
+.bg-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 2px;
+  margin-top: 64px;
+}
+.bg-card {
+  aspect-ratio: 16/9; position: relative; overflow: hidden;
+  background: var(--bg); cursor: pointer;
+  border: 1px solid rgba(0,229,160,0.08);
+  transition: border-color 0.3s;
+}
+.bg-card:hover { border-color: rgba(0,229,160,0.4); }
+.bg-card canvas { width: 100%; height: 100%; display: block; }
+.bg-label {
+  position: absolute; bottom: 10px; left: 12px;
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--green); letter-spacing: 0.2em;
+}
+.bg-cmd {
+  position: absolute; bottom: 10px; right: 12px;
+  font-family: var(--mono); font-size: 0.6rem;
+  color: var(--fg-dim);
+}
 
-  /* ── FOOTER ── */
-  footer {
-    border-top: 1px solid var(--fg-dim);
-    padding: 32px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.72rem;
-    color: var(--fg-dim);
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  footer a { color: var(--fg-dim); text-decoration: none; transition: color 0.2s; }
-  footer a:hover { color: var(--fg); }
+/* ── COMMANDS ── */
+.cmds-section {
+  padding: 120px 48px;
+}
+.cmds-inner { max-width: 1200px; margin: 0 auto; }
+.cmds-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+  gap: 2px; margin-top: 64px;
+}
+.cmd-row {
+  padding: 14px 18px; background: var(--bg1);
+  border-left: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.cmd-row:hover { border-color: var(--green); background: var(--bg2); }
+.cmd-name { font-family: var(--mono); font-size: 0.8rem; color: var(--green); margin-bottom: 3px; }
+.cmd-desc { font-family: var(--mono); font-size: 0.68rem; color: var(--fg-dim); }
 
-  /* ── DIVIDER ── */
-  .divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--fg-dim), transparent);
-    margin: 0 40px;
-  }
+/* ── CHANGELOG ── */
+.changelog-section { padding: 120px 48px; background: var(--bg1); border-top: 1px solid rgba(0,229,160,0.08); }
+.changelog-inner { max-width: 800px; margin: 0 auto; }
+.version-block { margin-bottom: 60px; }
+.version-tag {
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--bg); background: var(--green);
+  padding: 4px 12px; display: inline-block;
+  margin-bottom: 8px; letter-spacing: 0.1em;
+}
+.version-tag.old { background: var(--fg-dim); }
+.version-date { font-family: var(--mono); font-size: 0.68rem; color: var(--fg-dim); margin-bottom: 20px; }
+.version-title { font-family: var(--display); font-size: 2.5rem; color: var(--fg); margin-bottom: 20px; letter-spacing: 0.05em; }
+.version-changes { list-style: none; }
+.version-changes li {
+  font-family: var(--mono); font-size: 0.78rem; color: var(--fg-dim);
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; gap: 12px;
+}
+.version-changes li::before { content: '◈'; color: var(--green); flex-shrink: 0; }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* ── DOWNLOAD ── */
+.dl-section { padding: 140px 48px; text-align: center; }
+.dl-inner { max-width: 600px; margin: 0 auto; }
+.dl-box {
+  border: 1px solid rgba(0,229,160,0.2);
+  padding: 52px; margin-top: 52px; position: relative;
+  background: var(--bg1);
+}
+.dl-box::before {
+  content: '◈ DOWNLOAD';
+  position: absolute; top: -10px; left: 28px;
+  background: var(--bg1); padding: 0 10px;
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--green); letter-spacing: 0.3em;
+}
+.dl-file { font-family: var(--mono); font-size: 1.1rem; color: var(--fg); margin-bottom: 8px; }
+.dl-meta { font-family: var(--mono); font-size: 0.7rem; color: var(--fg-dim); margin-bottom: 36px; line-height: 1.8; }
+.dl-steps { text-align: left; margin-top: 40px; padding-top: 32px; border-top: 1px solid rgba(0,229,160,0.1); }
+.dl-steps h4 { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.3em; color: var(--fg-dim); margin-bottom: 20px; }
+.step { display: flex; gap: 16px; margin-bottom: 14px; }
+.step-n { font-family: var(--mono); font-size: 0.72rem; color: var(--fg-dim); min-width: 24px; }
+.step-t { font-family: var(--mono); font-size: 0.75rem; color: var(--fg-mid); line-height: 1.6; }
+.step-t code { color: var(--amber); background: rgba(245,166,35,0.1); padding: 1px 6px; }
+.step-t a { color: var(--amber); }
 
-  @media (max-width: 600px) {
-    nav { padding: 0 20px; }
-    .hero { padding: 80px 20px 40px; }
-    .section { padding: 60px 20px; }
-    .download-box { padding: 28px 20px; }
-    footer { padding: 24px 20px; }
-    .ascii-logo { font-size: 0.38rem; }
-  }
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid rgba(0,229,160,0.08);
+  padding: 32px 48px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 0.68rem; color: var(--fg-dim); flex-wrap: wrap; gap: 12px;
+}
+footer a { color: var(--fg-dim); text-decoration: none; transition: color 0.2s; }
+footer a:hover { color: var(--green); }
+
+/* ── DIVIDER ── */
+.div { height: 1px; background: linear-gradient(90deg,transparent,rgba(0,229,160,0.15),transparent); margin: 0 48px; }
+
+@keyframes rise { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+/* scroll reveal */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+@media(max-width:768px){
+  nav{padding:0 20px;} .nav-links{display:none;}
+  .hero{padding:80px 20px 60px;} .stats-bar{gap:32px;padding:24px;}
+  .section,.cmds-section,.changelog-section,.dl-section{padding:80px 20px;}
+  .bg-grid{grid-template-columns:repeat(2,1fr);}
+  footer{padding:24px 20px;}
+}
 </style>
 </head>
 <body>
 
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
 <nav>
-  <a href="#" class="nav-logo">ARCH<span>v4.52</span></a>
-  <div>
+  <a href="#" class="nav-logo">ARCH<span>v5.0</span></a>
+  <div class="nav-links">
     <a href="#features">Features</a>
+    <a href="#backgrounds">Backgrounds</a>
     <a href="#commands">Commands</a>
+    <a href="#changelog">Changelog</a>
     <a href="#download">Download</a>
-    <a href="https://github.com/CostcoMobilityScooter/arch" target="_blank">GitHub</a>
+    <a href="https://github.com/CostcoMobilityScooter/arch" target="_blank">GitHub ↗</a>
   </div>
+  <a href="#download" class="nav-dl">GET ARCH</a>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <p class="hero-eyebrow">◈ VERSION 5.0 — WINDOWS 10/11</p>
+    <h1 class="hero-title">A<span class="accent">R</span>CH</h1>
+    <p class="hero-sub-title">ADVANCED RESPONSIVE COMMAND HUB</p>
+    <p class="hero-desc">
+      A <strong>fullscreen terminal shell</strong> for Windows.<br>
+      Launch apps, monitor your system, chat with AI,<br>
+      and make your old PC feel brand new.
+    </p>
+    <div class="hero-btns">
+      <a href="#download" class="btn btn-primary">⬇ Download Free</a>
+      <a href="#features" class="btn btn-ghost">Explore Features</a>
+      <a href="https://github.com/CostcoMobilityScooter/arch" target="_blank" class="btn btn-ghost">GitHub →</a>
+    </div>
 
-  <pre class="ascii-logo">  █████╗ ██████╗  ██████╗██╗  ██╗
- ██╔══██╗██╔══██╗██╔════╝██║  ██║
- ███████║██████╔╝██║     ███████║
- ██╔══██║██╔══██╗██║     ██╔══██║
- ██║  ██║██║  ██║╚██████╗██║  ██║
- ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝</pre>
-
-  <p class="hero-version">◈ VERSION 4.52 — WINDOWS</p>
-  <h1 class="hero-title">Advanced Responsive Command Hub</h1>
-  <p class="hero-sub">
-    A fullscreen terminal-style launcher for Windows.<br>
-    Launch apps, monitor your system, run AI queries,<br>
-    and automate your workflow — all from one keyboard-driven interface.
-  </p>
-
-  <div class="hero-btns">
-    <a href="#download" class="btn btn-primary">⬇ Download Free</a>
-    <a href="#features" class="btn btn-secondary">See Features</a>
-    <a href="https://github.com/CostcoMobilityScooter/arch" target="_blank" class="btn btn-secondary">GitHub →</a>
-  </div>
-
-  <div class="terminal-wrap">
-    <div class="terminal">
-      <div class="terminal-bar">
-        <div class="t-dot"></div>
-        <div class="t-dot"></div>
-        <div class="t-dot"></div>
-        <span class="t-title">◈ ARCH  v4.52</span>
+    <div class="terminal-wrap">
+      <div class="terminal">
+        <div class="t-titlebar">
+          <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
+          <span class="t-bar-title">◈ ARCH v5.0 — Advanced Responsive Command Hub</span>
+        </div>
+        <div class="t-body" id="demo"></div>
       </div>
-      <div class="terminal-body" id="demo"></div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<!-- STATS -->
+<div class="stats-bar reveal">
+  <div class="stat"><div class="stat-num">60<span style="color:var(--fg-dim);font-size:2rem">+</span></div><div class="stat-label">APPS DETECTED</div></div>
+  <div class="stat"><div class="stat-num">4</div><div class="stat-label">LIVE BACKGROUNDS</div></div>
+  <div class="stat"><div class="stat-num">60<span style="color:var(--fg-dim);font-size:2rem">+</span></div><div class="stat-label">COMMANDS</div></div>
+  <div class="stat"><div class="stat-num">8</div><div class="stat-label">BUILT-IN THEMES</div></div>
+  <div class="stat"><div class="stat-num">0</div><div class="stat-label">COST</div></div>
+</div>
 
 <!-- FEATURES -->
 <section class="section" id="features">
-  <p class="section-label">// WHAT IT DOES</p>
-  <h2 class="section-title">Everything you need.<br><span>Nothing you don't.</span></h2>
+  <p class="section-eyebrow reveal">// WHAT IT DOES</p>
+  <h2 class="section-title reveal">Built for<br><span>power users.</span></h2>
+  <div class="features-grid reveal">
+    <div class="feature"><div class="feat-icon">⚡</div><div class="feat-name">App Launcher</div><div class="feat-desc">Auto-detects 60+ installed apps. Fuzzy search, favorites, aliases. Launch anything in under a second without touching your mouse.</div></div>
+    <div class="feature"><div class="feat-icon">📊</div><div class="feat-name">System Monitor</div><div class="feat-desc">Live CPU, RAM, disk, network stats on boot. Battery status, process viewer, kill tasks, real-time graphs — all keyboard driven.</div></div>
+    <div class="feature"><div class="feat-icon">🤖</div><div class="feat-name">AI Assistant</div><div class="feat-desc">Powered by Gemini (free API). Ask questions, translate text, define words, summarize web pages — with conversation memory.</div></div>
+    <div class="feature"><div class="feat-icon">📈</div><div class="feat-name">Crypto Ticker</div><div class="feat-desc">Live BTC, ETH, SOL, DOGE prices scroll across the top bar with 24h change arrows. Pulls from CoinGecko, no key needed.</div></div>
+    <div class="feature"><div class="feat-icon">🎨</div><div class="feat-name">Themes & Backgrounds</div><div class="feat-desc">8 built-in colour themes. 4 live animated backgrounds: stars, ocean waves, space flythrough, matrix rain. All switchable live.</div></div>
+    <div class="feature"><div class="feat-icon">🔒</div><div class="feat-name">Security</div><div class="feat-desc">Password lock screen with recovery key. XOR-encrypted secret vault. Secure password generator.</div></div>
+    <div class="feature"><div class="feat-icon">⏱</div><div class="feat-name">Productivity</div><div class="feat-desc">Timers, Pomodoro, reminders, stopwatch, notes, todos, sticky notes, clipboard history.</div></div>
+    <div class="feature"><div class="feat-icon">🌐</div><div class="feat-name">Network Tools</div><div class="feat-desc">Ping, DNS lookup, port scan, speed test, traceroute, HTTP headers, IP lookup, whois.</div></div>
+    <div class="feature"><div class="feat-icon">⚙️</div><div class="feat-name">Automation</div><div class="feat-desc">Macro recording, cron job scheduler, command chaining with &&, custom aliases, script runner.</div></div>
+  </div>
+</section>
 
-  <div class="features-grid">
-    <div class="feature">
-      <div class="feature-icon">⚡</div>
-      <div class="feature-name">App Launcher</div>
-      <div class="feature-desc">Auto-detects 50+ installed apps. Fuzzy search, favorites, aliases. Launch anything in under a second.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">📊</div>
-      <div class="feature-name">System Monitor</div>
-      <div class="feature-desc">Live CPU, RAM, disk, and network stats. Battery status, process viewer, real-time graphs.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🤖</div>
-      <div class="feature-name">AI Assistant</div>
-      <div class="feature-desc">Powered by Gemini. Ask questions, translate, define words, summarize pages — right in the terminal.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🎨</div>
-      <div class="feature-name">Fully Themeable</div>
-      <div class="feature-desc">8 built-in themes: green, amber, blue, matrix, red, cyan, purple, white. Create your own with hex codes.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🔒</div>
-      <div class="feature-name">Security</div>
-      <div class="feature-desc">Password lock screen, encrypted secret vault, recovery key support.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">⏱</div>
-      <div class="feature-name">Productivity</div>
-      <div class="feature-desc">Timers, reminders, Pomodoro, stopwatch, notes, todos, clipboard history, sticky notes.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🌐</div>
-      <div class="feature-name">Network Tools</div>
-      <div class="feature-desc">Ping, DNS lookup, port scan, speed test, traceroute, HTTP headers, IP lookup.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🗂</div>
-      <div class="feature-name">File Tools</div>
-      <div class="feature-desc">Browse directories, find duplicates, calculate sizes, diff files, zip/unzip, preview text.</div>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">⚙️</div>
-      <div class="feature-name">Automation</div>
-      <div class="feature-desc">Macro recording, cron job scheduling, command chaining with &&, custom aliases and scripts.</div>
+<div class="div"></div>
+
+<!-- BACKGROUNDS -->
+<section class="bg-section" id="backgrounds">
+  <div class="bg-inner">
+    <p class="section-eyebrow reveal">// LIVE BACKGROUNDS</p>
+    <h2 class="section-title reveal">Your terminal,<br><span>alive.</span></h2>
+    <div class="bg-grid reveal">
+      <div class="bg-card"><canvas id="c-stars"></canvas><div class="bg-label">STARS</div><div class="bg-cmd">bg stars</div></div>
+      <div class="bg-card"><canvas id="c-ocean"></canvas><div class="bg-label">OCEAN</div><div class="bg-cmd">bg ocean</div></div>
+      <div class="bg-card"><canvas id="c-space"></canvas><div class="bg-label">SPACE</div><div class="bg-cmd">bg space</div></div>
+      <div class="bg-card"><canvas id="c-matrix"></canvas><div class="bg-label">MATRIX</div><div class="bg-cmd">bg matrix</div></div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
 
 <!-- COMMANDS -->
-<section class="commands-section" id="commands">
-  <div class="commands-inner">
-    <p class="section-label">// COMMAND REFERENCE</p>
-    <h2 class="section-title" style="margin-bottom:0;">Type and go.<br><span>No clicks needed.</span></h2>
-    <div class="cmd-grid">
-      <div class="cmd-item"><div class="cmd-name">ask &lt;question&gt;</div><div class="cmd-desc">Ask the AI anything</div></div>
-      <div class="cmd-item"><div class="cmd-name">sys</div><div class="cmd-desc">CPU, RAM, disk, network stats</div></div>
-      <div class="cmd-item"><div class="cmd-name">theme &lt;name&gt;</div><div class="cmd-desc">Switch colour theme instantly</div></div>
-      <div class="cmd-item"><div class="cmd-name">ping &lt;host&gt;</div><div class="cmd-desc">Ping any host</div></div>
-      <div class="cmd-item"><div class="cmd-name">timer 25m Focus</div><div class="cmd-desc">Set a labelled countdown timer</div></div>
-      <div class="cmd-item"><div class="cmd-name">calc &lt;expr&gt;</div><div class="cmd-desc">Math calculator with functions</div></div>
-      <div class="cmd-item"><div class="cmd-name">translate es hello</div><div class="cmd-desc">Translate text to any language</div></div>
-      <div class="cmd-item"><div class="cmd-name">note &lt;text&gt;</div><div class="cmd-desc">Save a quick note</div></div>
-      <div class="cmd-item"><div class="cmd-name">speedtest</div><div class="cmd-desc">Test your internet speed</div></div>
-      <div class="cmd-item"><div class="cmd-name">vault add &lt;k&gt; &lt;v&gt;</div><div class="cmd-desc">Store encrypted secrets</div></div>
-      <div class="cmd-item"><div class="cmd-name">matrix</div><div class="cmd-desc">Matrix rain animation</div></div>
-      <div class="cmd-item"><div class="cmd-name">weather &lt;city&gt;</div><div class="cmd-desc">Current weather conditions</div></div>
+<section class="cmds-section" id="commands">
+  <div class="cmds-inner">
+    <p class="section-eyebrow reveal">// COMMAND REFERENCE</p>
+    <h2 class="section-title reveal">Type and go.<br><span>No clicks.</span></h2>
+    <div class="cmds-grid reveal">
+      <div class="cmd-row"><div class="cmd-name">ask &lt;question&gt;</div><div class="cmd-desc">Ask the AI anything</div></div>
+      <div class="cmd-row"><div class="cmd-name">sys</div><div class="cmd-desc">Full system stats snapshot</div></div>
+      <div class="cmd-row"><div class="cmd-name">bg stars|ocean|space|matrix</div><div class="cmd-desc">Switch live background</div></div>
+      <div class="cmd-row"><div class="cmd-name">theme &lt;name&gt;</div><div class="cmd-desc">Switch colour theme</div></div>
+      <div class="cmd-row"><div class="cmd-name">ping &lt;host&gt;</div><div class="cmd-desc">Ping any host</div></div>
+      <div class="cmd-row"><div class="cmd-name">timer 25m Focus</div><div class="cmd-desc">Labelled countdown timer</div></div>
+      <div class="cmd-row"><div class="cmd-name">calc &lt;expr&gt;</div><div class="cmd-desc">Math calculator</div></div>
+      <div class="cmd-row"><div class="cmd-name">translate es hello</div><div class="cmd-desc">Translate to any language</div></div>
+      <div class="cmd-row"><div class="cmd-name">note &lt;text&gt;</div><div class="cmd-desc">Save a quick note</div></div>
+      <div class="cmd-row"><div class="cmd-name">speedtest</div><div class="cmd-desc">Test internet speed</div></div>
+      <div class="cmd-row"><div class="cmd-name">vault add &lt;k&gt; &lt;v&gt;</div><div class="cmd-desc">Encrypted secret storage</div></div>
+      <div class="cmd-row"><div class="cmd-name">matrix</div><div class="cmd-desc">Matrix rain fullscreen</div></div>
+      <div class="cmd-row"><div class="cmd-name">weather &lt;city&gt;</div><div class="cmd-desc">Current weather</div></div>
+      <div class="cmd-row"><div class="cmd-name">ps</div><div class="cmd-desc">Top running processes</div></div>
+      <div class="cmd-row"><div class="cmd-name">lock set &lt;pw&gt;</div><div class="cmd-desc">Password lock screen</div></div>
+      <div class="cmd-row"><div class="cmd-name">macro record</div><div class="cmd-desc">Record command macros</div></div>
+      <div class="cmd-row"><div class="cmd-name">graph</div><div class="cmd-desc">Live CPU/RAM graph</div></div>
+      <div class="cmd-row"><div class="cmd-name">apikey set &lt;key&gt;</div><div class="cmd-desc">Set Gemini AI key</div></div>
+      <div class="cmd-row"><div class="cmd-name">fav add &lt;app&gt;</div><div class="cmd-desc">Add app to favourites</div></div>
+      <div class="cmd-row"><div class="cmd-name">help</div><div class="cmd-desc">Full command reference</div></div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
+
+<!-- CHANGELOG -->
+<section class="changelog-section" id="changelog">
+  <div class="changelog-inner">
+    <p class="section-eyebrow reveal">// CHANGELOG</p>
+    <h2 class="section-title reveal">What's<br><span>new.</span></h2>
+
+    <div class="version-block reveal">
+      <span class="version-tag">v5.0</span>
+      <div class="version-date">May 2026 — Latest</div>
+      <div class="version-title">The Shell Update</div>
+      <ul class="version-changes">
+        <li>4 live animated backgrounds: stars, ocean, space, matrix</li>
+        <li>Crypto ticker in top bar — BTC, ETH, SOL, DOGE with 24h change</li>
+        <li>Massively improved app scanner — 60+ apps including Adobe, Office, Epic, GOG</li>
+        <li>New v5 boot sequence with live system snapshot</li>
+        <li>Boot, click, and error sound cues</li>
+        <li>Two-column help display with faded descriptions</li>
+        <li>Gemini AI integration (free API key)</li>
+        <li>Update checker with clickable download link</li>
+        <li>Config saving fixed for standalone .exe</li>
+      </ul>
+    </div>
+
+    <div class="version-block reveal">
+      <span class="version-tag old">v4.52</span>
+      <div class="version-date">Initial release</div>
+      <div class="version-title">The Foundation</div>
+      <ul class="version-changes">
+        <li>Core terminal launcher with fuzzy search</li>
+        <li>System monitoring, network tools, file browser</li>
+        <li>8 built-in themes, custom theme builder</li>
+        <li>Password lock, encrypted vault</li>
+        <li>Timers, notes, todos, clipboard history</li>
+        <li>Macro recording, cron scheduler</li>
+        <li>Star field background animation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
 
 <!-- DOWNLOAD -->
-<section class="download-section" id="download">
-  <div class="download-inner">
-    <p class="section-label">// GET ARCH</p>
-    <h2 class="section-title" style="text-align:center;">Free.<br><span>No account needed.</span></h2>
-
-    <div class="download-box">
-      <div class="download-filename">ARCH_build_package.zip</div>
-      <div class="download-meta">
-        Windows 10/11 · Python 3.8+ required to build · ~25 KB download<br>
+<section class="dl-section" id="download">
+  <div class="dl-inner">
+    <p class="section-eyebrow reveal">// GET ARCH</p>
+    <h2 class="section-title reveal" style="text-align:center">Free.<br><span>Always.</span></h2>
+    <div class="dl-box reveal">
+      <div class="dl-file">ARCH_shareable.zip</div>
+      <div class="dl-meta">
+        Windows 10/11 · Python 3.8+ to build · ~25 KB download<br>
         Builds to a standalone .exe · No Python needed to run
       </div>
-      <a href=https://github.com/CostcoMobilityScooter/arch/releases/latest/download/ARCH_shareable.zip
-         class="btn btn-primary" style="width:100%;justify-content:center;font-size:0.9rem;padding:16px;">
-        ⬇ Download ARCH
+      <a href="https://github.com/CostcoMobilityScooter/arch/releases/latest/download/ARCH_shareable.zip"
+         class="btn btn-primary" style="width:100%;justify-content:center;font-size:0.85rem;padding:18px;">
+        ⬇ Download ARCH v5.0
       </a>
-
-      <div class="download-steps">
-        <h4>// SETUP — 3 STEPS</h4>
-        <div class="step">
-          <span class="step-num">01</span>
-          <span class="step-text">Install <a href="https://python.org" style="color:var(--amber)">Python 3.8+</a> — check <code>Add Python to PATH</code></span>
-        </div>
-        <div class="step">
-          <span class="step-num">02</span>
-          <span class="step-text">Extract the zip and double-click <code>BUILD_EXE.bat</code></span>
-        </div>
-        <div class="step">
-          <span class="step-num">03</span>
-          <span class="step-text">Run <code>dist\ARCH.exe</code> — type <code>help</code> to get started</span>
-        </div>
-        <div class="step" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--fg-dim)">
-          <span class="step-num">✦</span>
-          <span class="step-text">Optional: get a free <a href="https://aistudio.google.com" style="color:var(--amber)">Gemini API key</a> and run <code>apikey set &lt;key&gt;</code> to enable AI features</span>
+      <div class="dl-steps">
+        <h4>// SETUP IN 3 STEPS</h4>
+        <div class="step"><span class="step-n">01</span><span class="step-t">Install <a href="https://python.org">Python 3.8+</a> — check <code>Add Python to PATH</code></span></div>
+        <div class="step"><span class="step-n">02</span><span class="step-t">Extract the zip and double-click <code>BUILD_EXE.bat</code></span></div>
+        <div class="step"><span class="step-n">03</span><span class="step-t">Run <code>dist\ARCH.exe</code> — type <code>help</code> to get started</span></div>
+        <div class="step" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,229,160,0.08)">
+          <span class="step-n">✦</span>
+          <span class="step-t">Optional: get a free <a href="https://aistudio.google.com">Gemini API key</a> and run <code>apikey set &lt;key&gt;</code> to enable AI</span>
         </div>
       </div>
     </div>
@@ -626,84 +567,133 @@
 </section>
 
 <footer>
-  <span>◈ ARCH v4.52 — Free & open source</span>
+  <span>◈ ARCH v5.0 — Free & open source — Made by <a href="https://github.com/CostcoMobilityScooter" target="_blank">CostcoMobilityScooter</a></span>
   <span>
     <a href="https://github.com/CostcoMobilityScooter/arch" target="_blank">GitHub</a> ·
+    <a href="https://github.com/CostcoMobilityScooter/arch/releases" target="_blank">Releases</a> ·
     <a href="https://github.com/CostcoMobilityScooter/arch/issues" target="_blank">Report a bug</a>
   </span>
 </footer>
 
 <script>
-// Typewriter terminal demo
+// ── Custom cursor ────────────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; cur.style.left=mx+'px'; cur.style.top=my+'px'; });
+(function animRing(){ rx+=(mx-rx)*0.12; ry+=(my-ry)*0.12; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(animRing); })();
+
+// ── Scroll reveal ────────────────────────────────────────────────────────────
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ── Terminal demo ────────────────────────────────────────────────────────────
 const lines = [
-  { text: "  Scanning for apps", tag: "t-dim", pause: 600 },
-  { text: " — found 47\n", tag: "t-info", pause: 200 },
-  { text: "  Favorites: ", tag: "t-dim", pause: 0 },
-  { text: "[chrome] [vscode] [spotify] [discord]\n\n", tag: "t-amber", pause: 400 },
-  { text: "arch~$ ", tag: "t-prompt", pause: 0 },
-  { text: "sys", tag: "t-cmd", type: true, pause: 800 },
-  { text: "\n  ─── System Info ───────────────────\n", tag: "t-dim", pause: 100 },
-  { text: "  CPU:   4.2%\n", tag: "t-info", pause: 80 },
-  { text: "  RAM:   61% used  (9.8 GB / 16 GB)\n", tag: "t-info", pause: 80 },
-  { text: "  Disk:  44% used  (220 GB / 500 GB)\n", tag: "t-info", pause: 80 },
-  { text: "  Bat:   87% 🔋\n\n", tag: "t-info", pause: 500 },
-  { text: "arch~$ ", tag: "t-prompt", pause: 0 },
-  { text: "ask what is machine learning?", tag: "t-cmd", type: true, pause: 900 },
-  { text: "\n  ◈ Thinking...\n", tag: "t-dim", pause: 1200 },
-  { text: "  Machine learning is a branch of AI where systems\n  learn patterns from data to make predictions or\n  decisions without being explicitly programmed.\n\n", tag: "t-info", pause: 600 },
-  { text: "arch~$ ", tag: "t-prompt", pause: 0 },
-  { text: "theme amber", tag: "t-cmd", type: true, pause: 700 },
-  { text: "\n  Theme → amber\n\n", tag: "t-good", pause: 500 },
-  { text: "arch~$ ", tag: "t-prompt", pause: 0 },
+  {t:"  ◈ Scanning for installed apps...",cl:"t-dim",p:500},
+  {t:"  found 63 apps\n",cl:"t-green",p:200},
+  {t:"  CPU 3.1%  RAM 58%  (9.3 GB / 16 GB)\n\n",cl:"t-blue",p:400},
+  {t:"arch~$ ",cl:"t-prompt",p:0},{t:"bg space",cl:"t-green",type:true,p:700},
+  {t:"\n  Background → space\n\n",cl:"t-dim",p:400},
+  {t:"arch~$ ",cl:"t-prompt",p:0},{t:"ask explain quantum computing simply",cl:"t-green",type:true,p:900},
+  {t:"\n  ◈ Thinking...\n",cl:"t-dim",p:1400},
+  {t:"  Quantum computers use qubits that can be 0 and 1\n  at the same time, letting them solve certain problems\n  exponentially faster than regular computers.\n\n",cl:"t-blue",p:600},
+  {t:"arch~$ ",cl:"t-prompt",p:0},{t:"theme amber",cl:"t-green",type:true,p:700},
+  {t:"\n  Theme → amber\n\n",cl:"t-amber",p:500},
+  {t:"arch~$ ",cl:"t-prompt",p:0},
 ];
-
 const demo = document.getElementById('demo');
-let lineIdx = 0;
+let li = 0;
+function sp(text,cls){ const s=document.createElement('span'); s.className=cls; s.textContent=text; return s; }
+function typeIt(text,cls,cb){ let i=0; const s=document.createElement('span'); s.className=cls; demo.appendChild(s); (function t(){ if(i<text.length){s.textContent+=text[i++];setTimeout(t,35+Math.random()*25);}else cb&&cb(); })(); }
+function nextLine(){
+  if(li>=lines.length){ const c=document.createElement('span'); c.className='t-cursor'; demo.appendChild(c); setTimeout(()=>{demo.innerHTML='';li=0;nextLine();},3500); return; }
+  const l=lines[li++];
+  if(l.type) typeIt(l.t,l.cl,()=>setTimeout(nextLine,l.p));
+  else{ demo.appendChild(sp(l.t,l.cl)); setTimeout(nextLine,l.p); }
+}
+setTimeout(nextLine,800);
 
-function span(text, cls) {
-  const s = document.createElement('span');
-  s.className = cls;
-  s.textContent = text;
-  return s;
+// ── Background canvas previews ───────────────────────────────────────────────
+function initCanvas(id, drawFn) {
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; }
+  resize();
+  new ResizeObserver(resize).observe(canvas);
+  drawFn(canvas, ctx);
 }
 
-function typeLine(text, cls, cb) {
-  let i = 0;
-  const s = document.createElement('span');
-  s.className = cls;
-  demo.appendChild(s);
-  function tick() {
-    if (i < text.length) {
-      s.textContent += text[i++];
-      setTimeout(tick, 38 + Math.random() * 30);
-    } else { cb && cb(); }
-  }
-  tick();
-}
+// Stars
+initCanvas('c-stars', (c,ctx) => {
+  const stars = Array.from({length:80},()=>({x:Math.random()*c.width,y:Math.random()*c.height,s:Math.random()*1.5+0.3,v:Math.random()*0.4+0.1}));
+  (function draw(){
+    ctx.fillStyle='#05080a'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='#3a5a6e';
+    stars.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill(); s.x-=s.v; if(s.x<0){s.x=c.width;s.y=Math.random()*c.height;} });
+    requestAnimationFrame(draw);
+  })();
+});
 
-function nextLine() {
-  if (lineIdx >= lines.length) {
-    // add blinking cursor and loop
-    const cur = document.createElement('span');
-    cur.className = 't-cursor';
-    demo.appendChild(cur);
-    setTimeout(() => {
-      demo.innerHTML = '';
-      lineIdx = 0;
-      nextLine();
-    }, 3000);
-    return;
-  }
-  const l = lines[lineIdx++];
-  if (l.type) {
-    typeLine(l.text, l.tag, () => setTimeout(nextLine, l.pause));
-  } else {
-    demo.appendChild(span(l.text, l.tag));
-    setTimeout(nextLine, l.pause);
-  }
-}
+// Ocean
+initCanvas('c-ocean', (c,ctx) => {
+  let t=0;
+  const cols=Math.floor(c.width/3);
+  const phases=Array.from({length:cols},()=>Math.random()*Math.PI*2);
+  (function draw(){
+    ctx.fillStyle='#05080a'; ctx.fillRect(0,0,c.width,c.height);
+    t+=0.03;
+    for(let i=0;i<cols;i++){
+      const x=i*3;
+      const wy=c.height*0.6+Math.sin(t+phases[i])*20+Math.sin(t*0.5+phases[i]*1.3)*10;
+      ctx.strokeStyle='#0c2030'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(x,wy); ctx.lineTo(x,c.height); ctx.stroke();
+    }
+    requestAnimationFrame(draw);
+  })();
+});
 
-setTimeout(nextLine, 600);
+// Space
+initCanvas('c-space', (c,ctx) => {
+  const cx=c.width/2, cy=c.height/2;
+  const stars=Array.from({length:120},()=>{
+    const a=Math.random()*Math.PI*2, d=Math.random()*Math.min(c.width,c.height)*0.5;
+    return {x:cx+Math.cos(a)*d,y:cy+Math.sin(a)*d,a,d,v:Math.random()*0.8+0.2,s:Math.random()*1.5+0.3};
+  });
+  (function draw(){
+    ctx.fillStyle='#05080a'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='#3a5a6e';
+    stars.forEach(s=>{
+      s.d+=s.v; s.x=cx+Math.cos(s.a)*s.d; s.y=cy+Math.sin(s.a)*s.d;
+      if(s.x<0||s.x>c.width||s.y<0||s.y>c.height){s.a=Math.random()*Math.PI*2;s.d=1;s.x=cx;s.y=cy;}
+      const sz=Math.max(0.3,s.s*s.d/150);
+      ctx.beginPath(); ctx.arc(s.x,s.y,sz,0,Math.PI*2); ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })();
+});
+
+// Matrix
+initCanvas('c-matrix', (c,ctx) => {
+  const cols=Math.floor(c.width/12);
+  const rows=Array.from({length:cols},()=>({y:Math.random()*c.height/12,v:Math.random()*0.5+0.3}));
+  const chars='アイウエカキクケ01ABCDEF@#$';
+  (function draw(){
+    ctx.fillStyle='rgba(5,8,10,0.15)'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='#0d2a1a'; ctx.font='10px JetBrains Mono';
+    rows.forEach((r,i)=>{
+      const ch=chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(ch,i*12,r.y*12);
+      r.y+=r.v;
+      if(r.y*12>c.height+50) r.y=0;
+    });
+    requestAnimationFrame(draw);
+  })();
+});
 </script>
 </body>
 </html>
+HTMLEOF
+echo "done" && ls -lh /mnt/user-data/outputs/index.html
